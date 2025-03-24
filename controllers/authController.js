@@ -1,69 +1,39 @@
-import userModel from '../models/userModel.js';
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
+import AuthService from '../service/authService.js';
 
-dotenv.config();
-
-const Register = async (req, res) => {
-  const { name, email, phone, password, role } = req.body;
-
-  try {
-
-    const userExists = await userModel.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-    const user = await userModel.create({ name, email, phone, password, role });
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
-    });
-
-    return res.status(201).json({ message: 'User created successfully', token });
-  } catch (err) {
-    console.error('Error:', err); 
-    return res.status(500).json({ message: 'Error in user creation' });
+class AuthController {
+  constructor() {
+    this.authService = new AuthService();
   }
-};
 
-const Login = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
- 
-    const user = await userModel.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'User does not exist' });
+  register = async (req, res) => {
+    try {
+      const user = await this.authService.register(req.body);
+      res.status(201).json(user);
+    } catch (error) {
+      const status = error.message.includes('already exists') ? 400 : 500;
+      res.status(status).json({ error: error.message });
     }
+  };
 
- 
-    const passMatch = await user.comparePassword(password);
-    if (!passMatch) {
-      return res.status(400).json({ message: 'Incorrect password' });
+  login = async (req, res) => {
+    try {
+      const token = await this.authService.login(req.body);
+      res.cookie('AuthToken', token, {
+        httpOnly: true,
+        maxAge: 3600000,
+        sameSite: 'strict'
+      });
+      res.json({ token });
+    } catch (error) {
+      const status = error.message.includes('Invalid') ? 401 : 400;
+      res.status(status).json({ error: error.message });
     }
+  };
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
-    });
+  logout = (req, res) => {
+    res.clearCookie('AuthToken');
+    res.status(200).json({ message: 'Logged out successfully' });
+  };
+}
 
-    return res.status(200).json({ message: 'User logged in successfully', token });
-
-    // res.cookie('AuthToken', token, {
-    //   httpOnly: true,
-    //   maxAge: 3600000, // 1 hour
-    //   sameSite: 'strict',
-    // });
-    // return res.status(200).json({ message: 'User logged in successfully' });
-  } catch (err) {
-    console.error('Error:', err); // Log the error for debugging
-    return res.status(500).json({ message: 'Error in login' });
-  }
-};
-
-const Logout = async (req, res) => {
-  // Clear the AuthToken cookie
-  res.clearCookie('AuthToken');
-  return res.status(200).json({ message: 'User logged out successfully' });
-};
-
-export { Login, Register, Logout };
+export default AuthController;
