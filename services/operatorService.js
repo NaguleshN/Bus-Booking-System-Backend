@@ -1,0 +1,156 @@
+import userModel from '../models/userModel.js';
+import busModel from '../models/busModel.js';
+import tripModel from '../models/tripModel.js';
+
+class OperatorService {
+
+    creatingBus = async ({ operatorId, busNumber, busType, seats, amenities}) =>{
+        const operator = await userModel.findById(operatorId);
+        console.log(operatorId)
+        console.log(operator)
+
+        const existBus = await busModel.findOne({busNumber})
+        if(existBus){
+            throw new Error("Bus already exists")
+        }
+        if(!operator || operator.role !="operator"){
+            throw new Error("Operator is Invalid");
+        }
+        const validBustypes = ['Sleeper', 'AC', 'Non-AC', 'Seater'];
+        if(!validBustypes.includes(busType)){
+            throw new Error("Bus Type is not Valid");
+        }
+
+        const seatLayout = seats.map(seat => ({
+            seatNumber: seat.number,
+            isBooked: seat.booked || false
+        }));
+        // Add validation
+        console.log(seats.length)
+        if (seats.length === 0) 
+            throw new Error('At least one seat required');
+        const bus = await busModel.create({
+            operatorId,
+            busType,
+            busNumber,
+            setlayout: seatLayout,
+            amenities: amenities ,
+            totalSeats: seats.length
+        });
+        console.log(bus) 
+        return bus;
+    }
+
+    updatingBus = async (busData ,busId) =>{
+        const { busNumber, busType, seats, amenities} = busData;
+        // const operator = await userModel.findById(operatorId);
+        const selectedBus = await busModel.findById(busId);
+        console.log(selectedBus)
+        // console.log(operator)
+        if(!selectedBus){
+            throw new Error("Bus is Invalid");
+        }
+        
+        const validBustypes = ['Sleeper', 'AC', 'Non-AC', 'Seater'];
+        if(!validBustypes.includes(busType)){
+            throw new Error("Bus Type is not Valid");
+        }
+
+        const seatLayout = seats.map(seat => ({
+            seatNumber: seat.number,
+            isBooked: seat.booked || false
+        }));
+        // Add validation
+        console.log(seats.length)
+        if (seats.length === 0) 
+            throw new Error('At least one seat required');
+
+        const updateData = {};
+        if (busType) updateData.busType = busType;
+        if (amenities) updateData.amenities = amenities;
+        if (seats) {
+          updateData.setlayout = seatLayout;
+          updateData.totalSeats = seats.length;
+          updateData.busNumber = busNumber;
+        }
+      
+        const bus = await busModel.findByIdAndUpdate(
+            busId,
+            {$set: updateData},
+        );
+        console.log(bus) 
+        return bus;
+    }
+
+    deletingBus = async(busId) => {
+        console.log(busId);
+        const busToBeDeleted = await busModel.findById(busId);
+        if(!busToBeDeleted){
+            throw new Error("Bus not Exists");
+        }
+        const deletedBus = await busModel.findByIdAndDelete(busId);
+        return deletedBus;
+    }   
+
+    creatingTrip = async ({ operatorId, busId, source, destination, departureTime, arrivalTime, price, availableSeats }) =>{
+        const operator = await userModel.findById(operatorId);
+        console.log(operatorId)
+        console.log(operator)
+
+        const existBus = await busModel.findById(busId)
+        if(!existBus){
+            throw new Error("Bus not exists")
+        }
+        if(!operator || operator.role !="operator"){
+            throw new Error("Operator is Invalid");
+        }
+        
+        const trip = await tripModel.create({
+            operatorId, busId, source, destination, departureTime, arrivalTime, price, availableSeats
+        });
+        console.log(trip) 
+        return trip;
+    }
+    updatingTrip = async(tripData,tripId) =>{
+        const { operatorId, busId, source,destination,departureTime,arrivalTime, price, availableSeats } = tripData ;
+        const selectedBus = await busModel.findById(busId);
+        console.log(selectedBus)
+        
+        const operator = await userModel.findById(operatorId);
+        console.log(operator)
+
+        if(!selectedBus && !operator && operator.role!="operator"){
+            throw new Error("Bus is Invalid");
+        }
+        
+        const updateData = {};
+        if (source) updateData.source = source;
+        if (destination) updateData.destination = destination;
+        if (departureTime) updateData.departureTime = departureTime;
+        if (arrivalTime) updateData.arrivalTime = arrivalTime;
+        if (price) updateData.price = price;
+        if (availableSeats) updateData.availableSeats = availableSeats;
+         
+      
+        const trip = await tripModel.findByIdAndUpdate(
+            tripId,
+            {$set: updateData},
+        );
+        console.log(trip) 
+        return trip;
+    }
+
+    deletingTrip =async(tripId) =>{
+        const trip = await tripModel.findById(tripId);
+        console.log(trip)
+
+        if(!trip ){
+            throw new Error("Trip is Invalid");
+        }
+        const deletedTrip = await tripModel.findByIdAndDelete(tripId);
+        return deletedTrip;
+    }
+
+}
+
+export default OperatorService;

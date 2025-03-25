@@ -4,6 +4,7 @@ import winston from 'winston';
 import connectDB from './config/db.js';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
+import operatorRoutes from './routes/operatorRoutes.js';
 
 
 const app = express();
@@ -38,6 +39,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth' ,authRoutes);
+app.use('/api/operator' ,operatorRoutes);
 
 app.listen(process.env.PORT, () => {
   logger.info('Server is running on port 5000');
