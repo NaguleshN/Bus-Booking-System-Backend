@@ -72,6 +72,19 @@ class OperatorController {
             return res.status(500).json({ message:err.message })
         }
     }
+
+    getMyTrips = async (req,res) =>{
+        try{
+            const operatorId = req.params.id;
+            console.log(operatorId)
+            const getTrips = await this.operatorService.fetchingTrip(operatorId);
+            // console.log(getTrips)
+            return res.status(200).json({message:"Trips fetched",getTrips})
+        }catch(err){
+            return res.status(500).json({message:err.message})
+        }
+      
+    }
 }
 
 export default OperatorController;

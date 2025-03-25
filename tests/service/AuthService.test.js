@@ -1,4 +1,4 @@
-import AuthService from '../../service/authService.js';
+import AuthService from '../../services/authService.js';
 import userModel from '../../models/userModel.js';
 import jwt from 'jsonwebtoken';
 

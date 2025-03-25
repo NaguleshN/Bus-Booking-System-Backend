@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
 import operatorRoutes from './routes/operatorRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 
 const app = express();
@@ -38,8 +39,9 @@ app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
-app.use('/api/auth' ,authRoutes);
-app.use('/api/operator' ,operatorRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/operator', operatorRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.listen(process.env.PORT, () => {
   logger.info('Server is running on port 5000');

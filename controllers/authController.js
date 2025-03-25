@@ -23,6 +23,7 @@ class AuthController {
         maxAge: 3600000,
         sameSite: 'strict'
       });
+      res.setHeader('Authorization', `Bearer ${token}`);
       res.json({ token });
     } catch (error) {
       const status = error.message.includes('Invalid') ? 401 : 400;

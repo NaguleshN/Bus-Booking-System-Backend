@@ -2,6 +2,7 @@ import userModel from '../models/userModel.js';
 import jwt from 'jsonwebtoken';
 
 class AuthService {
+  
   async register({ name, email, phone, password, role, compName }) {
     
     if (!email || !password) {
@@ -47,7 +48,6 @@ class AuthService {
       { expiresIn: '1h' }
     );
   }
-
 }
 
 export default AuthService;

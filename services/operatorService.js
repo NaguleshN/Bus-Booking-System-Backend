@@ -151,6 +151,11 @@ class OperatorService {
         return deletedTrip;
     }
 
+    fetchingTrip = async (operatorId) =>{
+        const getTrips = await tripModel.find({ operatorId });
+        console.log("Trips" , getTrips)
+        return getTrips;
+    }
 }
 
 export default OperatorService;
