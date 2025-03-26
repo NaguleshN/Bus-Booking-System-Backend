@@ -8,6 +8,7 @@ const authMiddleware = new AuthMiddleware();
 
 router.get('/trips/:id',authMiddleware.protectOperator, operatorController.getMyTrips);
 
+router.get('/buses',authMiddleware.protectOperator, operatorController.getBuses);
 router.post('/buses',authMiddleware.protectOperator, operatorController.createBus);
 router.patch('/buses/:id', authMiddleware.protectOperator, operatorController.updateBus);
 router.delete('/buses/:id',authMiddleware.protectOperator, operatorController.deleteBus);

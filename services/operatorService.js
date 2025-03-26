@@ -3,7 +3,10 @@ import busModel from '../models/busModel.js';
 import tripModel from '../models/tripModel.js';
 
 class OperatorService {
-
+    getBus = async() =>{
+        const buses = await busModel.find();
+        return buses;
+    }
     creatingBus = async ({ operatorId, busNumber, busType, seats, amenities}) =>{
         const operator = await userModel.findById(operatorId);
         console.log(operatorId)

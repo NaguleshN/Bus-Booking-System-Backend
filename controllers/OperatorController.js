@@ -5,6 +5,14 @@ class OperatorController {
         this.operatorService = new OperatorService();
     }
 
+    getBuses = async(req,res) =>{
+        try{
+            const buses = await this.operatorService.getBus();
+            return res.status(200).json({message : "Bus fetched successfuly", buses})
+        }catch(error){
+            return res.status(404).json({message : error.message})
+        }
+    }
     createBus = async(req,res) =>{
         try{
             
