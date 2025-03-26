@@ -16,7 +16,7 @@ class AdminController {
     getUser = async(req,res) =>{
         try{
             const userId = req.params.id ;
-            const users = await this.adminService.getAllUser(userId);
+            const users = await this.adminService.getUser(userId);
             return res.status(200).json({message:"Fetched success", users})
         }
         catch(err){
@@ -64,8 +64,28 @@ class AdminController {
         try{
             const tripId = req.params.id
             const trips = await this.adminService.getTrip(tripId);
-            return res.status(200).json({ message: "Fetched Trips successfully" ,trips})
+            return res.status(200).json({ message: "Fetched Trip successfully" ,trips})
         }catch(err){
+            return res.status(400).json({ message: err.message })
+        }
+    }
+    
+    updateTrip = async(req,res) => {
+        try{
+            const tripId = req.params.id
+            const trips = await this.adminService.updateTrip(req.body, tripId);
+            return res.status(200).json({ message: "Updated Trips successfully" ,trips})
+        } catch(err){
+            return res.status(400).json({ message: err.message })
+        }
+    }
+
+    cancelTrip = async(req,res) => {
+        try{
+            const tripId = req.params.id
+            const trips = await this.adminService.cancelTrip(tripId);
+            return res.status(200).json({ message: "Trip cancelled successfully" ,trips})
+        } catch(err){
             return res.status(400).json({ message: err.message })
         }
     }

@@ -7,17 +7,18 @@ const adminController = new AdminController();
 const authMiddleware = new  AuthMiddleware();
 
 
-router.get('/get_users', authMiddleware.protectAdmin ,adminController.getUsers);
-router.get('/get_user/:id', authMiddleware.protectAdmin ,adminController.getUser);
+router.get('/users', authMiddleware.protectAdmin ,adminController.getUsers);
+router.get('/users/:id', authMiddleware.protectAdmin ,adminController.getUser);
 
-router.get('/get_operators', authMiddleware.protectAdmin, adminController.getOperators);
-router.get('/get_operator/:id', authMiddleware.protectAdmin, adminController.getOperator);
+router.get('/operators', authMiddleware.protectAdmin, adminController.getOperators);
+router.get('/operators/:id', authMiddleware.protectAdmin, adminController.getOperator);
 router.patch('/block_unblock/:id',authMiddleware.protectAdmin, adminController.blockUnblock);
-router.patch('/approve_operator/:id',authMiddleware.protectAdmin, adminController.approveOperator);
+router.patch('/operator/:id/approve',authMiddleware.protectAdmin, adminController.approveOperator);
 
-router.get('/get_trips',authMiddleware.protectAdmin, adminController.getAllTrips);
-router.get('/get_trip/:id',authMiddleware.protectAdmin, adminController.getTrip);
-// router.patch('/get_trip/:id',authMiddleware.protectAdmin, adminController.getTrip);
+router.get('/trips',authMiddleware.protectAdmin, adminController.getAllTrips);
+router.get('/trips/:id',authMiddleware.protectAdmin, adminController.getTrip);
+router.patch('/trips/:id',authMiddleware.protectAdmin, adminController.updateTrip);
+router.patch('/trips/:id/cancel',authMiddleware.protectAdmin, adminController.cancelTrip);
 
 
 export default router;

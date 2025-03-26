@@ -1,6 +1,3 @@
-import userModel from '../models/userModel.js';
-
-import AuthService from '../services/authService.js';
 import OperatorService from '../services/operatorService.js';
 
 class OperatorController {
@@ -21,7 +18,6 @@ class OperatorController {
         try{
             const busId  = req.params.id ;
             console.log(busId);
-            
             const user = await this.operatorService.updatingBus(req.body ,busId);
             return res.status(201).json({message:"Bus updated successfully"})
         }
@@ -52,9 +48,11 @@ class OperatorController {
 
     updateTrip = async(req ,res) =>{
         try{
+            console.log(req.user.id)
+            const userId = req.user.id ;
             const tripId = req.params.id;
             console.log(tripId);
-            const user = await this.operatorService.updatingTrip(req.body,tripId);
+            const user = await this.operatorService.updatingTrip(req.body,tripId,userId);
             return res.status(201).json({message : "trip updated successfuly"})
         }catch(error){
             return res.status(404).json({message : error.message})
@@ -63,13 +61,27 @@ class OperatorController {
 
     deleteTrip = async(req,res) => {
         try{
+            console.log(req.user.id)
+            const userId = req.user.id ;
             const tripId = req.params.id;
             console.log(tripId);
-            const user = await this.operatorService.deletingTrip(tripId);
+            const user = await this.operatorService.deletingTrip(userId,tripId);
             return res.status(201).json({ message:"Deleted Successfully" })
         }
         catch(err){
             return res.status(500).json({ message:err.message })
+        }
+    }
+
+    cancelTrip = async(req,res) => {
+        try{
+            console.log(req.user.id)
+            const userId = req.user.id ;
+            const tripId = req.params.id
+            const trips = await this.operatorService.cancelTrip(userId,tripId);
+            return res.status(200).json({ message: "Trip cancelled successfully" ,trips})
+        } catch(err){
+            return res.status(400).json({ message: err.message })
         }
     }
 
@@ -78,7 +90,6 @@ class OperatorController {
             const operatorId = req.params.id;
             console.log(operatorId)
             const getTrips = await this.operatorService.fetchingTrip(operatorId);
-            // console.log(getTrips)
             return res.status(200).json({message:"Trips fetched",getTrips})
         }catch(err){
             return res.status(500).json({message:err.message})

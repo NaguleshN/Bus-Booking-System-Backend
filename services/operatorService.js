@@ -111,15 +111,16 @@ class OperatorService {
         console.log(trip) 
         return trip;
     }
-    updatingTrip = async(tripData,tripId) =>{
+
+    updatingTrip = async(tripData,tripId ,userId) =>{
         const { operatorId, busId, source,destination,departureTime,arrivalTime, price, availableSeats } = tripData ;
-        const selectedBus = await busModel.findById(busId);
+        const selectedBus = await busModel.findOne({_id : busId, operatorId :userId});
         console.log(selectedBus)
         
         const operator = await userModel.findById(operatorId);
         console.log(operator)
 
-        if(!selectedBus && !operator && operator.role!="operator"){
+        if(!selectedBus || !operator || operator.role!="operator"){
             throw new Error("Bus is Invalid");
         }
         
@@ -131,7 +132,6 @@ class OperatorService {
         if (price) updateData.price = price;
         if (availableSeats) updateData.availableSeats = availableSeats;
          
-      
         const trip = await tripModel.findByIdAndUpdate(
             tripId,
             {$set: updateData},
@@ -140,8 +140,8 @@ class OperatorService {
         return trip;
     }
 
-    deletingTrip =async(tripId) =>{
-        const trip = await tripModel.findById(tripId);
+    deletingTrip =async(userId,tripId) =>{
+        const trip = await tripModel.find({_id : tripId,userId});
         console.log(trip)
 
         if(!trip ){
@@ -155,6 +155,20 @@ class OperatorService {
         const getTrips = await tripModel.find({ operatorId });
         console.log("Trips" , getTrips)
         return getTrips;
+    }
+
+    cancelTrip = async(userId, tripId) =>{
+        const trip = await tripModel.findOne({ _id : tripId, userId});
+        console.log(trip)
+        if(!trip){
+            throw new Error("Trip is not found");
+        }
+        if (trip.status === 'Cancelled') {
+            throw new Error("Trip is already cancelled");
+        }
+        trip.status = 'Cancelled'
+        const updatedTrip =  await trip.save();
+        return updatedTrip;
     }
 }
 

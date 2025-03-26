@@ -6,14 +6,15 @@ const router = express.Router();
 const operatorController = new OperatorController();
 const authMiddleware = new AuthMiddleware();
 
-router.get('/get_trips/:id',authMiddleware.protectOperator, operatorController.getMyTrips);
+router.get('/trips/:id',authMiddleware.protectOperator, operatorController.getMyTrips);
 
-router.post('/create_bus',authMiddleware.protectOperator, operatorController.createBus);
-router.patch('/update_bus/:id', authMiddleware.protectOperator, operatorController.updateBus);
-router.delete('/delete_bus/:id',authMiddleware.protectOperator, operatorController.deleteBus);
+router.post('/buses',authMiddleware.protectOperator, operatorController.createBus);
+router.patch('/buses/:id', authMiddleware.protectOperator, operatorController.updateBus);
+router.delete('/buses/:id',authMiddleware.protectOperator, operatorController.deleteBus);
 
-router.post('/create_trip',authMiddleware.protectOperator, operatorController.createTrip);
-router.patch('/update_trip/:id',authMiddleware.protectOperator, operatorController.updateTrip);
-router.delete('/delete_trip/:id',authMiddleware.protectOperator, operatorController.deleteTrip);
+router.post('/trips',authMiddleware.protectOperator, operatorController.createTrip);
+router.patch('/trips/:id',authMiddleware.protectOperator, operatorController.updateTrip);
+router.delete('/trips/:id',authMiddleware.protectOperator, operatorController.deleteTrip);
+router.patch('/trips/:id/cancel',authMiddleware.protectOperator, operatorController.cancelTrip);
 
 export default router;
