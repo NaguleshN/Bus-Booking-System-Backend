@@ -6,7 +6,7 @@ class AuthMiddleware {
     protectUser = async(req,res,next) =>{
         const token = req.header('Authorization')?.replace('Bearer ', '') || req.cookies.AuthToken  ; 
         if(!token){
-            throw new Error("Token Not found");
+            return res.status(404).json({ error: 'Token not found' });
         }
         console.log("Nagulesh")
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -20,7 +20,7 @@ class AuthMiddleware {
     protectOperator = async(req,res,next) =>{
         const token = req.header('Authorization')?.replace('Bearer ', '') || req.cookies.AuthToken  ; 
         if(!token){
-            throw new Error("Token Not found");
+            return res.status(404).json({ error: 'Token not found' });
         }
         console.log("Nagulesh")
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -37,7 +37,8 @@ class AuthMiddleware {
     protectAdmin = async(req,res,next) =>{
         const token = req.header('Authorization')?.replace('Bearer ', '') || req.cookies.AuthToken  ; 
         if(!token){
-            throw new Error("Token Not found");
+            // throw new Error("Token Not found");
+            return res.status(404).json({ error: 'Token not found' });
         }
         console.log("Nagulesh")
         const decoded = jwt.verify(token, process.env.JWT_SECRET);

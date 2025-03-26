@@ -1,8 +1,9 @@
 import morgan from 'morgan';
 import winston from 'winston';
 
-class LoggingService{
-    logger = winston.createLogger({
+class LoggingService {
+  constructor() {
+    this.logger = winston.createLogger({
       level: 'info',
       format: winston.format.combine(
         winston.format.timestamp(),
@@ -13,9 +14,25 @@ class LoggingService{
         new winston.transports.File({ filename: 'app.log' })
       ]
     });
-    morganlogging =  morgan('combined', {
+
+    this.morganLogging = morgan('combined', {
       stream: {
-        write: (message) => logger.info(message.trim())
+        write: (message) => this.logger.info(message.trim()) // Fix: Use `this.logger`
       }
-    })
+    });
+  }
+
+  logInfo(message) {
+    this.logger.info(message);
+  }
+
+  logError(message) {
+    this.logger.error(message);
+  }
+
+  logWarning(message) {
+    this.logger.warn(message);
+  }
 }
+
+export default new LoggingService();
