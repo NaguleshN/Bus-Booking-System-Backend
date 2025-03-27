@@ -26,5 +26,5 @@ const feedbackSchema = mongoose.Schema({
     timestamps:true
 });
 
-const feedbackModel = mongoose.Model("Feedback", feedbackSchema)
+const feedbackModel = mongoose.model("Feedback", feedbackSchema)
 export default feedbackModel;

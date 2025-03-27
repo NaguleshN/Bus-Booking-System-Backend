@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
 import operatorRoutes from './routes/operatorRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import loggingService from './services/loggingService.js';
 
 
@@ -16,6 +17,7 @@ app.use(loggingService.morganLogging)
 
 app.use('/api/auth', authRoutes);
 app.use('/api/operator', operatorRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.listen(process.env.PORT, () => {
