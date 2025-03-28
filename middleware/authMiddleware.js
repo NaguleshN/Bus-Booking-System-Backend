@@ -33,13 +33,13 @@ class AuthMiddleware {
             return res.status(401).json({ messsage: 'Not a Operator' });
         }
         req.user = user;
+        console.log(user);
         next();
     }
 
     protectAdmin = async(req,res,next) =>{
         const token = req.header('Authorization')?.replace('Bearer ', '') || req.cookies.AuthToken  ; 
         if(!token){
-            // throw new Error("Token Not found");
             return res.status(404).json({ error: 'Token not found' });
         }
         console.log("Nagulesh")

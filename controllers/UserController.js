@@ -28,7 +28,7 @@ class UserController {
         try{
             const userId = req.params.id; 
             const profile = await this.userService.viewProfile(userId);
-            return res.status(200).json({message:"User Profile"});
+            return res.status(200).json({message:"User Profile",profile});
         }catch(err){
             return res.status(500).json({message:err.message})
         }

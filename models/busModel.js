@@ -17,27 +17,22 @@ const busSchema = new mongoose.Schema({
         enum:["Sleeper","AC","Non-AC","Seater"],
         required : true
     },
-    setlayout:[{
-        seatNumber : {
-            type:Number,
-            required:true
-        },
-        isBooked:{
-            type:Boolean,
-            default:false
-        }
-    }],
+    // setlayout:[{
+    //     seatNumber : {
+    //         type:Number,
+    //         required:true
+    //     },
+    //     isBooked:{
+    //         type:Boolean,
+    //         default:false
+    //     }
+    // }],
     amenities:{
         type:String
     },
     totalSeats: {
         type: Number,
-        validate: {
-          validator: function(v) {
-            return v === this.setlayout.length;
-        },
-          message: 'Total seats must match seat count'
-        }
+        required: true
     }
 },{
     timestamps:true
