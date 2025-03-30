@@ -1,6 +1,6 @@
 import express from 'express';
 import OperatorController from '../controllers/OperatorController.js';
-import AuthMiddleware from '../middleware/authMiddleware.js';
+import AuthMiddleware from '../middleware/AuthMiddleware.js';
 
 const router = express.Router();
 const operatorController = new OperatorController();
