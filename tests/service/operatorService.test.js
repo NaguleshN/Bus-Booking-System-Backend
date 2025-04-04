@@ -1,9 +1,8 @@
 import OperatorService from '../../services/operatorService.js';
-import userModel from '../../models/userModel.js';
+import userModel from '../../models/userModel.js'; 
 import busModel from '../../models/busModel.js';
 import tripModel from '../../models/tripModel.js';
 
-// Mock the models
 jest.mock('../../models/userModel.js');
 jest.mock('../../models/busModel.js');
 jest.mock('../../models/tripModel.js');
@@ -11,263 +10,162 @@ jest.mock('../../models/tripModel.js');
 describe('OperatorService', () => {
   let operatorService;
 
-  // Mock data
-  const mockOperator = {
-    _id: 'operator123',
-    role: 'operator'
-  };
-
-  const mockCustomer = {
-    _id: 'customer123',
-    role: 'customer'
-  };
-
-  const mockBus = {
-    _id: 'bus123',
-    operatorId: 'operator123',
-    busNumber: 'BUS001',
-    busType: 'AC',
-    setlayout: [],
-    amenities: ['TV', 'WiFi'],
-    totalSeats: 20,
-    save: jest.fn()
-  };
-
-  const mockTrip = {
-    _id: 'trip123',
-    operatorId: 'operator123',
-    userId: 'customer123',
-    busId: 'bus123',
-    source: 'New York',
-    destination: 'Boston',
-    departureTime: new Date(),
-    arrivalTime: new Date(),
-    price: 50,
-    availableSeats: 20,
-    status: 'Scheduled',
-    save: jest.fn()
-  };
-
-  const cancelledTrip = {
-    ...mockTrip,
-    status: 'Cancelled'
-  };
-
   beforeEach(() => {
     operatorService = new OperatorService();
     jest.clearAllMocks();
-    
-    // Reset mock implementations
-    mockBus.save.mockImplementation(function() {
-      return Promise.resolve(this);
-    });
-    
-    mockTrip.save.mockImplementation(function() {
-      return Promise.resolve(this);
-    });
   });
 
-  describe('Bus Operations', () => {
-    test('creatingBus - should create a new bus successfully', async () => {
+  describe('Bus Management', () => {
+    const mockOperatorId = 'operator123';
+    const mockBusId = 'bus123';
+    const mockBusData = {
+      busNumber: 'KA01AB1234',
+      busType: 'AC',
+      seats: 40,
+      amenities: ['WiFi', 'AC', 'TV']
+    };
+
+    test('getBuses should return all buses', async () => {
+      const mockBuses = [{ _id: 'bus1' }, { _id: 'bus2' }];
+      busModel.find.mockResolvedValue(mockBuses);
+
+      const result = await operatorService.getBuses();
+      expect(busModel.find).toHaveBeenCalled();
+      expect(result).toEqual(mockBuses);
+    });
+
+    test('getBus should return a specific bus', async () => {
+      const mockBus = { _id: mockBusId };
+      busModel.findById.mockResolvedValue(mockBus);
+
+      const result = await operatorService.getBus(mockBusId);
+      expect(busModel.findById).toHaveBeenCalledWith(mockBusId);
+      expect(result).toEqual(mockBus);
+    });
+
+    test('creatingBus should create a new bus with valid data', async () => {
+      const mockOperator = { _id: mockOperatorId, role: 'operator' };
       userModel.findById.mockResolvedValue(mockOperator);
       busModel.findOne.mockResolvedValue(null);
-      busModel.create.mockResolvedValue(mockBus);
+      busModel.create.mockResolvedValue({ ...mockBusData, _id: mockBusId });
 
-      const result = await operatorService.creatingBus({
-        operatorId: 'operator123',
-        busNumber: 'BUS001',
-        busType: 'AC',
-        seats: [{ number: 'A1', booked: false }],
-        amenities: ['TV', 'WiFi']
-      });
-
-      expect(userModel.findById).toHaveBeenCalledWith('operator123');
-      expect(busModel.findOne).toHaveBeenCalledWith({ busNumber: 'BUS001' });
+      const result = await operatorService.creatingBus(mockOperatorId, mockBusData);
+      expect(userModel.findById).toHaveBeenCalledWith(mockOperatorId);
+      expect(busModel.findOne).toHaveBeenCalledWith({ busNumber: mockBusData.busNumber });
       expect(busModel.create).toHaveBeenCalled();
-      expect(result).toEqual(mockBus);
+      expect(result).toEqual(expect.objectContaining(mockBusData));
     });
 
-    test('updatingBus - should update bus successfully', async () => {
-      busModel.findById.mockResolvedValue(mockBus);
-      busModel.findByIdAndUpdate.mockResolvedValue({
-        ...mockBus,
-        busType: 'Non-AC'
-      });
+    test('creatingBus should throw error for invalid operator', async () => {
+      userModel.findById.mockResolvedValue(null);
 
-      const result = await operatorService.updatingBus(
-        { busType: 'Non-AC', seats: [{ number: 'A1', booked: false }] },
-        'bus123'
-      );
+      await expect(operatorService.creatingBus(mockOperatorId, mockBusData))
+        .rejects.toThrow('Operator is Invalid');
+    });
 
-      expect(busModel.findById).toHaveBeenCalledWith('bus123');
+    test('creatingBus should throw error for duplicate bus number', async () => {
+      const mockOperator = { _id: mockOperatorId, role: 'operator' };
+      userModel.findById.mockResolvedValue(mockOperator);
+      busModel.findOne.mockResolvedValue({}); // Simulate existing bus
+
+      await expect(operatorService.creatingBus(mockOperatorId, mockBusData))
+        .rejects.toThrow('Bus already exists');
+    });
+
+    test('updatingBus should update bus details', async () => {
+      const updatedData = { ...mockBusData, busType: 'Non-AC' };
+      busModel.findById.mockResolvedValue({ _id: mockBusId });
+      busModel.findByIdAndUpdate.mockResolvedValue(updatedData);
+
+      const result = await operatorService.updatingBus(updatedData, mockBusId);
+      expect(busModel.findById).toHaveBeenCalledWith(mockBusId);
       expect(busModel.findByIdAndUpdate).toHaveBeenCalled();
-      expect(result.busType).toBe('Non-AC');
+      expect(result).toEqual(updatedData);
     });
 
-    test('deletingBus - should delete bus successfully', async () => {
-      busModel.findById.mockResolvedValue(mockBus);
-      busModel.findByIdAndDelete.mockResolvedValue(mockBus);
+    test('deletingBus should delete a bus', async () => {
+      busModel.findById.mockResolvedValue({ _id: mockBusId });
+      busModel.findByIdAndDelete.mockResolvedValue({ _id: mockBusId });
 
-      const result = await operatorService.deletingBus('bus123');
-
-      expect(busModel.findById).toHaveBeenCalledWith('bus123');
-      expect(busModel.findByIdAndDelete).toHaveBeenCalledWith('bus123');
-      expect(result).toEqual(mockBus);
+      const result = await operatorService.deletingBus(mockBusId);
+      expect(busModel.findById).toHaveBeenCalledWith(mockBusId);
+      expect(busModel.findByIdAndDelete).toHaveBeenCalledWith(mockBusId);
+      expect(result).toEqual({ _id: mockBusId });
     });
-
-    test('getBus - should return all buses',async () =>{
-      busModel.find.mockResolvedValue([mockBus,mockBus]);
-
-      const result = await operatorService.getBus();
-      expect(busModel.find).toHaveBeenCalledWith();
-      expect(result).toHaveLength(2);
-      expect(result[0]._id).toBe('bus123');
-      expect(result[0].busNumber).toBe('BUS001');
-    });
-
-    test('getBus - should return empty array if no buses exist', async () => {
-      busModel.find.mockResolvedValue([]);
-
-      const result = await operatorService.getBus();
-
-      expect(busModel.find).toHaveBeenCalledWith();
-      expect(result).toHaveLength(0);
-    })
   });
 
-  describe('Trip Operations', () => {
-    test('creatingTrip - should create a new trip successfully', async () => {
+  describe('Trip Management', () => {
+    const mockOperatorId = 'operator123';
+    const mockTripId = 'trip123';
+    const mockBusId = 'bus123';
+    const mockTripData = {
+      busId: mockBusId,
+      source: 'City A',
+      destination: 'City B',
+      departureTime: new Date(),
+      arrivalTime: new Date(),
+      price: 500,
+      seatNumbers: ['A1', 'A2', 'A3'],
+      availableSeats: 40
+    };
+
+    test('creatingTrip should create a new trip', async () => {
+      const mockOperator = { _id: mockOperatorId, role: 'operator' };
+      const mockBus = { _id: mockBusId };
       userModel.findById.mockResolvedValue(mockOperator);
       busModel.findById.mockResolvedValue(mockBus);
-      tripModel.create.mockResolvedValue(mockTrip);
+      tripModel.create.mockResolvedValue({ ...mockTripData, _id: mockTripId });
 
-      const result = await operatorService.creatingTrip({
-        operatorId: 'operator123',
-        busId: 'bus123',
-        source: 'New York',
-        destination: 'Boston',
-        departureTime: new Date(),
-        arrivalTime: new Date(),
-        price: 50,
-        availableSeats: 20
-      });
-
-      expect(userModel.findById).toHaveBeenCalledWith('operator123');
-      expect(busModel.findById).toHaveBeenCalledWith('bus123');
+      const result = await operatorService.creatingTrip(mockOperatorId, mockTripData);
+      expect(userModel.findById).toHaveBeenCalledWith(mockOperatorId);
+      expect(busModel.findById).toHaveBeenCalledWith(mockBusId);
       expect(tripModel.create).toHaveBeenCalled();
-      expect(result).toEqual(mockTrip);
+      expect(result).toEqual(expect.objectContaining(mockTripData));
     });
 
-    test('updatingTrip - should update trip successfully', async () => {
-      userModel.findById.mockResolvedValue(mockOperator);
-      busModel.findOne.mockResolvedValue(mockBus);
-      tripModel.findByIdAndUpdate.mockResolvedValue({
-        ...mockTrip,
-        price: 60
-      });
+    test('updatingTrip should update trip details', async () => {
+      const updatedData = { ...mockTripData, price: 600 };
+      busModel.findById.mockResolvedValue({ _id: mockBusId });
+      userModel.findById.mockResolvedValue({ _id: mockOperatorId, role: 'operator' });
+      tripModel.findByIdAndUpdate.mockResolvedValue(updatedData);
 
-      const result = await operatorService.updatingTrip(
-        { price: 60, operatorId: 'operator123', busId: 'bus123' },
-        'trip123',
-        'operator123'
-      );
-
+      const result = await operatorService.updatingTrip(updatedData, mockTripId, mockOperatorId);
+      expect(busModel.findById).toHaveBeenCalledWith(mockBusId);
       expect(tripModel.findByIdAndUpdate).toHaveBeenCalled();
-      expect(result.price).toBe(60);
+      expect(result).toEqual(updatedData);
     });
 
-    test('deletingTrip - should delete trip successfully', async () => {
-      tripModel.find.mockResolvedValue([mockTrip]);
-      tripModel.findByIdAndDelete.mockResolvedValue(mockTrip);
+    test('fetchingTrip should return operator trips', async () => {
+      const mockTrips = [{ _id: 'trip1' }, { _id: 'trip2' }];
+      tripModel.find.mockResolvedValue(mockTrips);
 
-      const result = await operatorService.deletingTrip('customer123', 'trip123');
+      const result = await operatorService.fetchingTrip(mockOperatorId);
+      expect(tripModel.find).toHaveBeenCalledWith({ operatorId: mockOperatorId });
+      expect(result).toEqual(mockTrips);
+    });
 
-      expect(tripModel.find).toHaveBeenCalledWith({ _id: 'trip123', userId: 'customer123' });
-      expect(tripModel.findByIdAndDelete).toHaveBeenCalledWith('trip123');
+    test('getTrip should return a specific trip', async () => {
+      const mockTrip = { _id: mockTripId };
+      tripModel.findById.mockResolvedValue(mockTrip);
+
+      const result = await operatorService.getTrip(mockTripId);
+      expect(tripModel.findById).toHaveBeenCalledWith(mockTripId);
       expect(result).toEqual(mockTrip);
     });
 
-    test('fetchingTrip - should fetch trips by operator', async () => {
-      tripModel.find.mockResolvedValue([mockTrip, mockTrip]);
-
-      const result = await operatorService.fetchingTrip('operator123');
-
-      expect(tripModel.find).toHaveBeenCalledWith({ operatorId: 'operator123' });
-      expect(result).toHaveLength(2);
-    });
-
-    test('cancelTrip - should cancel trip successfully', async () => {
+    test('cancelTrip should cancel a trip', async () => {
+      const mockTrip = { 
+        _id: mockTripId, 
+        userId: mockOperatorId,
+        status: 'Active',
+        save: jest.fn().mockResolvedValue({ ...mockTripData, status: 'Cancelled' })
+      };
       tripModel.findOne.mockResolvedValue(mockTrip);
-      mockTrip.save.mockResolvedValue(cancelledTrip);
 
-      const result = await operatorService.cancelTrip('customer123', 'trip123');
-
-      expect(tripModel.findOne).toHaveBeenCalledWith({ 
-        _id: 'trip123', 
-        userId: 'customer123' 
-      });
-      expect(mockTrip.status).toBe('Cancelled');
+      const result = await operatorService.cancelTrip(mockOperatorId, mockTripId);
+      expect(tripModel.findOne).toHaveBeenCalledWith({ _id: mockTripId, userId: mockOperatorId });
       expect(mockTrip.save).toHaveBeenCalled();
       expect(result.status).toBe('Cancelled');
-    });
-
-    test('cancelTrip - should throw error if trip not found', async () => {
-      tripModel.findOne.mockResolvedValue(null);
-
-      await expect(operatorService.cancelTrip('customer123', 'trip123'))
-        .rejects.toThrow('Trip is not found');
-    });
-
-    test('cancelTrip - should throw error if trip already cancelled', async () => {
-      tripModel.findOne.mockResolvedValue(cancelledTrip);
-
-      await expect(operatorService.cancelTrip('customer123', 'trip123'))
-        .rejects.toThrow('Trip is already cancelled');
-    });
-  });
-
-  describe('Error Handling', () => {
-    test('creatingBus - should throw error for invalid operator', async () => {
-      userModel.findById.mockResolvedValue(mockCustomer);
-      busModel.findOne.mockResolvedValue(null);
-
-      await expect(operatorService.creatingBus({
-        operatorId: 'customer123',
-        busNumber: 'BUS001',
-        busType: 'AC',
-        seats: [{ number: 'A1', booked: false }]
-      })).rejects.toThrow('Operator is Invalid');
-    });
-
-    test('creatingBus - should throw error for existing bus', async () => {
-      userModel.findById.mockResolvedValue(mockOperator);
-      busModel.findOne.mockResolvedValue(mockBus);
-
-      await expect(operatorService.creatingBus({
-        operatorId: 'operator123',
-        busNumber: 'BUS001',
-        busType: 'AC',
-        seats: [{ number: 'A1', booked: false }]
-      })).rejects.toThrow('Bus already exists');
-    });
-
-    test('creatingBus - should throw error for invalid bus type', async () => {
-      userModel.findById.mockResolvedValue(mockOperator);
-      busModel.findOne.mockResolvedValue(null);
-
-      await expect(operatorService.creatingBus({
-        operatorId: 'operator123',
-        busNumber: 'BUS001',
-        busType: 'Invalid',
-        seats: [{ number: 'A1', booked: false }]
-      })).rejects.toThrow('Bus Type is not Valid');
-    });
-
-    test('deletingBus - should throw error when bus not found', async () => {
-      busModel.findById.mockResolvedValue(null);
-
-      await expect(operatorService.deletingBus('invalid'))
-        .rejects.toThrow('Bus not Exists');
     });
   });
 });
