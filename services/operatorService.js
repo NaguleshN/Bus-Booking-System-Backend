@@ -18,8 +18,6 @@ class OperatorService {
 
         const { busNumber, busType, seats, amenities} = busData;
         const operator = await userModel.findById(operatorId);
-        console.log(operatorId)
-        // console.log(operator)
 
         const existBus = await busModel.findOne({busNumber})
         
@@ -39,7 +37,6 @@ class OperatorService {
         //     isBooked: seat.booked || false
         // }));
         
-        console.log(seats)
         if (seats === 0) 
             throw new Error('At least one seat required');
         const bus = await busModel.create({
@@ -50,7 +47,6 @@ class OperatorService {
             amenities: amenities ,
             totalSeats: seats
         });
-        console.log(bus) 
         return bus;
     }
 
@@ -58,8 +54,7 @@ class OperatorService {
         const { busNumber, busType, seats, amenities} = busData;
         // const operator = await userModel.findById(operatorId);
         const selectedBus = await busModel.findById(busId);
-        console.log(selectedBus)
-        // console.log(operator)
+        
         if(!selectedBus){
             throw new Error("Bus is Invalid");
         }
@@ -69,7 +64,6 @@ class OperatorService {
             throw new Error("Bus Type is not Valid");
         }
 
-        console.log(seats)
         if (seats === 0) 
             throw new Error('At least one seat required');
 
@@ -85,12 +79,11 @@ class OperatorService {
             busId,
             {$set: updateData},
         );
-        console.log(bus) 
         return bus;
     }
 
     deletingBus = async(busId) => {
-        console.log(busId);
+        
         const busToBeDeleted = await busModel.findById(busId);
         if(!busToBeDeleted){
             throw new Error("Bus not Exists");
@@ -103,8 +96,7 @@ class OperatorService {
 
         const { busId, source, destination, departureTime, arrivalTime, price, seatNumbers, availableSeats } = tripData ;
         const operator = await userModel.findById(operatorId);
-        console.log(operatorId)
-        console.log(operator)
+       
 
         const existBus = await busModel.findById(busId)
         if(!existBus){
@@ -116,15 +108,13 @@ class OperatorService {
         
         const trip = await tripModel.create({
             operatorId, busId, source, destination, departureTime, arrivalTime, price, availableSeats, seatNumbers
-        });
-        console.log(trip) 
+        }); 
         return trip;
     }
 
     updatingTrip = async(tripData,tripId ,userId) =>{
         const { busId, source,destination,departureTime,arrivalTime, price,seatNumbers, availableSeats } = tripData ;
         // const selectedBus = await busModel.findOne({_id : busId, operatorId :userId});
-        // console.log(selectedBus)
         
         if(busId){
             const selectedBus = await busModel.findById(busId);
@@ -133,7 +123,6 @@ class OperatorService {
             }
         }
         const operator = await userModel.findById(userId);
-        console.log(operator)
 
         if( !operator || operator.role!="operator"){
             throw new Error("Bus is Invalid");
@@ -153,14 +142,12 @@ class OperatorService {
             tripId,
             {$set: updateData},
         );
-        console.log(trip) 
         return trip;
     }
 
     deletingTrip =async(userId,tripId) =>{
         const trip = await tripModel.find({_id : tripId,userId});
-        console.log(trip)
-
+       
         if(!trip ){
             throw new Error("Trip is Invalid");
         }
@@ -170,19 +157,23 @@ class OperatorService {
 
     fetchingTrip = async (operatorId) =>{
         const getTrips = await tripModel.find({ operatorId });
-        console.log("Trips" , getTrips)
+        if(!getTrips){
+            throw new Error("Trip is not found");
+        }
         return getTrips;
     }
 
     getTrip = async (tripId) =>{
         const getTrip = await tripModel.findById(tripId);
-        console.log("Trips" , getTrip)
+       if(!getTrip){
+            throw new Error("Trip is not found");
+        }
         return getTrip;
     }
 
     cancelTrip = async(userId, tripId) =>{
         const trip = await tripModel.findOne({ _id : tripId, userId});
-        console.log(trip)
+        
         if(!trip){
             throw new Error("Trip is not found");
         }
