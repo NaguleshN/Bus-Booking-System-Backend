@@ -47,5 +47,7 @@ The **Bus Booking System** is a web application designed to provide an efficient
 ### Payment Gateway
 - **Razorpay/Stripe**: For processing online payments.
 
+### API Docs 
+[Link](https://github.com/NaguleshN/Bus-Booking-System-Backend/blob/main/bus_booking_system.md)
 
 ---
