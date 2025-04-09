@@ -2,7 +2,6 @@ import UserService from '../../services/userService.js';
 import userModel from '../../models/userModel.js'; 
 import tripModel from '../../models/tripModel.js';
 import bookingModel from '../../models/bookingModel.js';
-import paymentModel from '../../models/paymentModel.js';
 
 jest.mock('../../models/userModel.js');
 jest.mock('../../models/busModel.js');
@@ -167,9 +166,8 @@ describe('UserService', () => {
         expect(tripModel.findById).toHaveBeenCalledWith(mockTripId);
         expect(result.bookingStatus).toBe('Cancelled');
         
-        // Verify the seats were added back
         expect(mockTrip.seatNumbers).toEqual(expect.arrayContaining(['A1', 'A2']));
-        expect(mockTrip.availableSeats).toBe(12); // 10 + 2 returned seats
+        expect(mockTrip.availableSeats).toBe(12); 
       });
   });
 
