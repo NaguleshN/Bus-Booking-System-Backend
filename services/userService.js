@@ -48,9 +48,8 @@ class UserService {
         }
         
         trip.seatNumbers = trip.seatNumbers.filter(seat => !seatNumbers.includes(seat));
-        
         console.log("Trip id",tripId);
-        user.bookings.push( tripId  );
+        
         trip.availableSeats -= seats;
         console.log(trip.availableSeats, trip.seatNumbers.length);
         
@@ -65,6 +64,7 @@ class UserService {
         });
         
         await trip.save();
+        user.bookings.push( booking._id );
         await user.save();
         return booking;
         
