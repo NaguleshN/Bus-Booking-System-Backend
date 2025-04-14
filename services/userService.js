@@ -2,6 +2,7 @@ import userModel from "../models/userModel.js";
 import tripModel from "../models/tripModel.js";
 import bookingModel from "../models/bookingModel.js";
 import paymentModel from "../models/paymentModel.js";
+import feedbackModel from "../models/feedbackModel.js";
 
 class UserService {
     getTrips = async() =>{
@@ -93,6 +94,29 @@ class UserService {
         booking.bookingStatus = 'Cancelled';
         await booking.save();
         return booking;
+    }
+
+    addReview = async(userId,tripId,reviewData) =>{
+        const { rating, comment } = reviewData;
+        const trip = await tripModel.findById(tripId);
+        const user = await userModel.findById(userId);
+        if(!user) throw new Error("User not found");
+        
+        if(!trip) throw new Error("Trip not found");
+        const review = await feedbackModel.create({
+            userId,
+            tripId,
+            rating,
+            comment
+        });
+        trip.feedbacks.push(review._id);
+        await trip.save();
+        return trip;
+    }
+    getReviews = async(tripId) =>{
+        const trip = await tripModel.findById(tripId);
+        if(!trip) throw new Error("Trip not found");
+        return trip.reviews;
     }
         
     paymentForTickets = async(userId, bookingId, paymentData) =>{ 
