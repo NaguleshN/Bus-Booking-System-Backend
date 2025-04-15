@@ -1,0 +1,8 @@
+node_modules
+.git
+.env
+npm-debug.log
+Dockerfile*
+docker-compose*
+README.md
+bus_booking_system.md

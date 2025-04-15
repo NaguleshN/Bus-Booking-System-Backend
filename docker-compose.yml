@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    image: nagulesh123/busbooking-backend:1.0
+    build: .
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - MONGO_URI=mongodb://root:password123@mongo:27017/busbooking?authSource=admin
+      - JWT_SECRET=fvkfjajfhaiofablmxva
+      - BACKEND_URL=http://localhost:5001
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:6
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    command: --auth
+
+volumes:
+  mongodb_data:
