@@ -66,7 +66,11 @@ const tripSchema = mongoose.Schema({
         type: String,
         enum: ['Scheduled', 'Cancelled', 'Completed'],
         default: 'Scheduled'
-    }
+    },
+    feedbacks: [{
+        type: mongoose.Schema.ObjectId,
+        ref: 'Feedback'
+    }],
 }, {
     timestamps: true
 });
