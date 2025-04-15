@@ -1,5 +1,4 @@
 import userModel from "../models/userModel.js";
-import busModel from "../models/userModel.js";
 import tripModel from '../models/tripModel.js';
 
 
