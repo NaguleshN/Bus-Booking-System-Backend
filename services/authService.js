@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 
 class AuthService {
   
-  async register({ name, email, phone, password, role, compName }) {
+  async register({ name, lastName, email, phone, password, role, compName }) {
     
     if (!email || !password) {
       throw new Error('Email and password are required');
@@ -22,6 +22,7 @@ class AuthService {
     
     return await userModel.create({
       name,
+      lastName,
       email,
       phone,
       password,

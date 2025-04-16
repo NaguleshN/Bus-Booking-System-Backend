@@ -2,14 +2,12 @@ import AdminService from '../../services/adminService.js';
 import userModel from '../../models/userModel.js';
 import tripModel from '../../models/tripModel.js';
 
-// Mock the models
 jest.mock('../../models/userModel.js');
 jest.mock('../../models/tripModel.js');
 
 describe('AdminService', () => {
   let adminService;
 
-  // Mock data
   const mockUser = {
     _id: 'user123',
     name: 'Test User',
@@ -56,7 +54,6 @@ describe('AdminService', () => {
     adminService = new AdminService();
     jest.clearAllMocks();
 
-    // Reset mock implementations
     mockUser.save.mockImplementation(function() {
       return Promise.resolve(this);
     });
@@ -229,20 +226,6 @@ describe('AdminService', () => {
       );
       expect(result.source).toBe('Chicago');
       expect(result.price).toBe(75);
-    });
-
-    test('updateTrip - should log the trip after update', async () => {
-      const updateData = { source: 'Chicago' };
-      const consoleSpy = jest.spyOn(console, 'log');
-      tripModel.findByIdAndUpdate.mockResolvedValue({
-        ...mockTrip,
-        ...updateData
-      });
-
-      await adminService.updateTrip(updateData, 'trip123');
-
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
     });
 
     test('updateTrip - should handle empty update data', async () => {

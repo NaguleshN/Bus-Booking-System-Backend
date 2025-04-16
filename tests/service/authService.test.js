@@ -35,8 +35,8 @@ describe('AuthService', () => {
 
     it('should throw error if phone already exists', async () => {
       userModel.findOne
-        .mockResolvedValueOnce(null) // no user with email
-        .mockResolvedValueOnce({ _id: '456' }); // phone exists
+        .mockResolvedValueOnce(null) 
+        .mockResolvedValueOnce({ _id: '456' });
 
       await expect(authService.register({
         email: 'test@example.com',
