@@ -34,6 +34,10 @@ describe('AdminService', () => {
     busId: 'bus123',
     source: 'New York',
     destination: 'Boston',
+    departureTime: new Date(),
+    arrivalTime: new Date(),
+    price: 50,
+    availableSeats: 20,
     status: 'Scheduled',
     save: jest.fn()
   };
@@ -110,6 +114,13 @@ describe('AdminService', () => {
 
       expect(result.isBlocked).toBe(false);
     });
+
+    test('blockUnblockUser - should throw error if user not found', async () => {
+      userModel.findById.mockResolvedValue(null);
+
+      await expect(adminService.blockUnblockUser('invalid'))
+        .rejects.toThrow('User is not found');
+    });
   });
 
   describe('Operator Management', () => {
@@ -132,6 +143,13 @@ describe('AdminService', () => {
       expect(result._id).toBe('operator123');
     });
 
+    test('getOperator - should throw error if operator not found', async () => {
+      userModel.findById.mockResolvedValue(null);
+
+      await expect(adminService.getOperator('invalid'))
+        .rejects.toThrow('Operator is not found');
+    });
+
     test('approveOperator - should approve an operator', async () => {
       userModel.findById.mockResolvedValue(mockOperator);
 
@@ -143,10 +161,25 @@ describe('AdminService', () => {
       expect(result.isVerified).toBe(true);
     });
 
+    test('approveOperator - should work when operator already verified', async () => {
+      userModel.findById.mockResolvedValue(verifiedOperator);
+
+      const result = await adminService.approveOperator('operator123');
+
+      expect(result.isVerified).toBe(true);
+    });
+
     test('approveOperator - should throw error for non-operator', async () => {
       userModel.findById.mockResolvedValue(mockUser);
 
       await expect(adminService.approveOperator('user123'))
+        .rejects.toThrow('Operator is not found');
+    });
+
+    test('approveOperator - should throw error if operator not found', async () => {
+      userModel.findById.mockResolvedValue(null);
+
+      await expect(adminService.approveOperator('invalid'))
         .rejects.toThrow('Operator is not found');
     });
   });
@@ -171,6 +204,13 @@ describe('AdminService', () => {
       expect(result._id).toBe('trip123');
     });
 
+    test('getTrip - should throw error if trip not found', async () => {
+      tripModel.findById.mockResolvedValue(null);
+
+      await expect(adminService.getTrip('invalid'))
+        .rejects.toThrow('Trip is not found');
+    });
+
     test('updateTrip - should update trip details', async () => {
       const updateData = {
         source: 'Chicago',
@@ -190,6 +230,83 @@ describe('AdminService', () => {
       expect(result.source).toBe('Chicago');
       expect(result.price).toBe(75);
     });
+
+    test('updateTrip - should log the trip after update', async () => {
+      const updateData = { source: 'Chicago' };
+      const consoleSpy = jest.spyOn(console, 'log');
+      tripModel.findByIdAndUpdate.mockResolvedValue({
+        ...mockTrip,
+        ...updateData
+      });
+
+      await adminService.updateTrip(updateData, 'trip123');
+
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    test('updateTrip - should handle empty update data', async () => {
+      tripModel.findByIdAndUpdate.mockResolvedValue(mockTrip);
+
+      const result = await adminService.updateTrip({}, 'trip123');
+
+      expect(tripModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        'trip123',
+        { $set: {} }
+      );
+      expect(result).toEqual(mockTrip);
+    });
+
+    test('updateTrip - should update only source field', async () => {
+      const updateData = { source: 'Chicago' };
+      tripModel.findByIdAndUpdate.mockResolvedValue({
+        ...mockTrip,
+        source: 'Chicago'
+      });
+
+      const result = await adminService.updateTrip(updateData, 'trip123');
+
+      expect(result.source).toBe('Chicago');
+      expect(result.destination).toBe('Boston');
+    });
+
+    test('updateTrip - should update only destination field', async () => {
+      const updateData = { destination: 'Chicago' };
+      tripModel.findByIdAndUpdate.mockResolvedValue({
+        ...mockTrip,
+        destination: 'Chicago'
+      });
+
+      const result = await adminService.updateTrip(updateData, 'trip123');
+
+      expect(result.source).toBe('New York');
+      expect(result.destination).toBe('Chicago');
+    });
+
+    
+    test('updateTrip - should update only departureTime, arrivalTime, and availableSeats fields', async () => {
+      const updateData = {
+        departureTime: '2025-04-20T09:00:00Z',
+        arrivalTime: '2025-04-20T15:00:00Z',
+        availableSeats: 30
+      };
+
+      tripModel.findByIdAndUpdate.mockResolvedValue({
+        ...mockTrip,
+        departureTime: updateData.departureTime,
+        arrivalTime: updateData.arrivalTime,
+        availableSeats: updateData.availableSeats
+      });
+
+      const result = await adminService.updateTrip(updateData, 'trip123');
+
+      expect(result.departureTime).toBe(updateData.departureTime);
+      expect(result.arrivalTime).toBe(updateData.arrivalTime);
+      expect(result.availableSeats).toBe(updateData.availableSeats);
+      expect(result.destination).toBe(mockTrip.destination); 
+      expect(result.source).toBe(mockTrip.source);           
+    });
+
 
     test('cancelTrip - should cancel a trip', async () => {
       tripModel.findById.mockResolvedValue(mockTrip);
