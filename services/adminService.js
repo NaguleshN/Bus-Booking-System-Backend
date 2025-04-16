@@ -67,7 +67,6 @@ class AdminService {
             tripId,
             {$set: updateData},
         );
-        console.log(trip) 
         return trip;
 
     }
