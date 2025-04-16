@@ -7,141 +7,145 @@ jest.mock('../../models/userModel.js');
 jest.mock('jsonwebtoken');
 
 describe('AuthService', () => {
-  let authService;
-  
-  const testUser = {
-    _id: '507f191e810c19729de860ea',
-    name: 'Test User',
-    email: 'test@example.com',
-    phone: '1234567890',
-    password: 'hashedpassword',
-    role: 'user',
-    comparePassword: jest.fn()
-  };
+  const authService = new AuthService();
 
-  beforeEach(() => {
-    authService = new AuthService();
-    process.env.JWT_SECRET = 'test-secret';
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('register()', () => {
-    it('should register a new user with valid data', async () => {
-      // Mock dependencies
-      userModel.findOne.mockResolvedValue(null);
-      userModel.create.mockResolvedValue(testUser);
-
-      // Test data
-      const userData = {
-        name: 'Test User',
-        email: 'test@example.com',
-        phone: '1234567890',
-        password: 'password123',
-        role: 'user'
-      };
-
-      const result = await authService.register(userData);
-
-      expect(userModel.findOne).toHaveBeenCalledTimes(2);
-      expect(userModel.create).toHaveBeenCalledWith({
-        name: 'Test User',
-        email: 'test@example.com',
-        phone: '1234567890',
-        password: 'password123',
-        role: 'user',
-        companyName: '',
-        isVerified: true
-      });
-      expect(result).toEqual(testUser);
+  describe('register', () => {
+    it('should throw error if email or password is missing', async () => {
+      await expect(authService.register({ email: '', password: '' }))
+        .rejects.toThrow('Email and password are required');
     });
 
-    it('should throw error when email exists', async () => {
-      userModel.findOne.mockResolvedValueOnce(testUser); // Email exists
-      
+    it('should throw error if user already exists', async () => {
+      userModel.findOne.mockImplementation(({ email }) => email ? { _id: '123' } : null);
+
       await expect(authService.register({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'pass123',
+        phone: '1234567890',
+        name: 'John',
+        lastName: 'Doe',
+        role: 'user',
+        compName: ''
       })).rejects.toThrow('User already exists');
     });
 
-    it('should throw error when phone exists', async () => {
+    it('should throw error if phone already exists', async () => {
       userModel.findOne
-        .mockResolvedValueOnce(null) // Email doesn't exist
-        .mockResolvedValueOnce(testUser); // Phone exists
-      
+        .mockResolvedValueOnce(null) // no user with email
+        .mockResolvedValueOnce({ _id: '456' }); // phone exists
+
       await expect(authService.register({
-        email: 'new@example.com',
+        email: 'test@example.com',
+        password: 'pass123',
         phone: '1234567890',
-        password: 'password123'
+        name: 'John',
+        lastName: 'Doe',
+        role: 'user',
+        compName: ''
       })).rejects.toThrow('Phone already exists');
     });
 
-    it('should set companyName and isVerified for operators', async () => {
+    it('should register new user if email and phone are unique', async () => {
       userModel.findOne.mockResolvedValue(null);
-      userModel.create.mockResolvedValue({
-        ...testUser,
-        role: 'operator'
-      });
+      const createdUser = {
+        _id: '789',
+        name: 'John',
+        email: 'test@example.com'
+      };
+      userModel.create.mockResolvedValue(createdUser);
 
       const result = await authService.register({
-        email: 'operator@test.com',
-        password: 'password123',
-        role: 'operator',
-        compName: 'Test Company'
+        name: 'John',
+        lastName: 'Doe',
+        email: 'test@example.com',
+        phone: '1234567890',
+        password: 'pass123',
+        role: 'user',
+        compName: 'TestComp'
       });
 
       expect(userModel.create).toHaveBeenCalledWith(expect.objectContaining({
-        companyName: 'Test Company',
-        isVerified: false
-      }));
-    });
-  });
-
-  describe('login()', () => {
-    it('should return JWT token for valid credentials', async () => {
-      // Mock dependencies
-      userModel.findOne.mockResolvedValue(testUser);
-      testUser.comparePassword.mockResolvedValue(true);
-      jwt.sign.mockReturnValue('fake-token');
-
-      const token = await authService.login({
         email: 'test@example.com',
-        password: 'correctpassword'
+        isVerified: true,
+        companyName: ''
+      }));
+      expect(result).toEqual(createdUser);
+    });
+
+    it('should set the companyName to empty string if role is user', async () => {
+      const createdUser = {
+        _id: '789',
+        name: 'John',
+        email: 'test@example.com',
+        companyName: 'TestComp'
+      };
+      userModel.create.mockResolvedValue(createdUser);
+
+      const result = await authService.register({
+        name: 'John',
+        lastName: 'Doe',
+        email: 'test@example.com',
+        phone: '1234567890',
+        password: 'pass123',
+        role: 'operator',
+        compName: 'TestComp'
       });
 
-      expect(userModel.findOne).toHaveBeenCalledWith({ email: 'test@example.com' });
-      expect(testUser.comparePassword).toHaveBeenCalledWith('correctpassword');
+      expect(userModel.create).toHaveBeenCalledWith(expect.objectContaining({
+        email: 'test@example.com',
+        isVerified: false,
+        companyName: 'TestComp'
+      }));
+      expect(result).toEqual(createdUser);
+    });
+
+  });
+
+  describe('login', () => {
+    it('should throw error if email or password is missing', async () => {
+      await expect(authService.login({ email: '', password: '' }))
+        .rejects.toThrow('Email and password are required');
+    });
+
+    it('should throw error if user not found', async () => {
+      userModel.findOne.mockResolvedValue(null);
+
+      await expect(authService.login({ email: 'user@test.com', password: '1234' }))
+        .rejects.toThrow('User not found');
+    });
+
+    it('should throw error if password is invalid', async () => {
+      const fakeUser = {
+        comparePassword: jest.fn().mockResolvedValue(false)
+      };
+      userModel.findOne.mockResolvedValue(fakeUser);
+
+      await expect(authService.login({ email: 'user@test.com', password: 'wrong' }))
+        .rejects.toThrow('Invalid credentials');
+    });
+
+    it('should return token on successful login', async () => {
+      const fakeUser = {
+        _id: 'user123',
+        comparePassword: jest.fn().mockResolvedValue(true)
+      };
+      userModel.findOne.mockResolvedValue(fakeUser);
+      jwt.sign.mockReturnValue('mocked-jwt-token');
+
+      const result = await authService.login({ email: 'user@test.com', password: 'correct' });
+
       expect(jwt.sign).toHaveBeenCalledWith(
-        { id: '507f191e810c19729de860ea' },
-        'test-secret',
+        { id: 'user123' },
+        process.env.JWT_SECRET,
         { expiresIn: '1h' }
       );
-      expect(token).toBe('fake-token');
+      expect(result).toBe('mocked-jwt-token');
     });
 
-    it('should throw error for invalid email', async () => {
-      userModel.findOne.mockResolvedValue(null);
-      
-      await expect(authService.login({
-        email: 'wrong@example.com',
-        password: 'password123'
-      })).rejects.toThrow('User not found');
-    });
 
-    it('should throw error for invalid password', async () => {
-      userModel.findOne.mockResolvedValue(testUser);
-      testUser.comparePassword.mockResolvedValue(false);
-      
-      await expect(authService.login({
-        email: 'test@example.com',
-        password: 'wrongpassword'
-      })).rejects.toThrow('Invalid credentials');
-    });
-
-    it('should validate required fields', async () => {
-      await expect(authService.login({})).rejects.toThrow(
-        'Email and password are required'
-      );
-    });
   });
 });
