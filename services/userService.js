@@ -29,47 +29,58 @@ class UserService {
         return user;
     }
 
-    bookTickets = async(userId,tripId,bookData) =>{
-        const {seats,seatNumbers} = bookData;
+    bookTickets = async (userId, tripId, bookData) => {
+        const { seats, seatNumbers } = bookData;
+
         const user = await userModel.findById(userId);
         const trip = await tripModel.findById(tripId);
+
         if (!Array.isArray(seatNumbers)) {
             throw new Error('seatNumbers must be an array');
         }
+
+        if (seatNumbers.length === 0) {
+            throw new Error('seatNumbers cannot be empty');
+        }
+
         if (seats !== seatNumbers.length) {
             throw new Error('Seat count must match seat numbers provided');
         }
-        if(trip.availableSeats < seats) throw new Error("Seats are not available");
-        
+
+        if (trip.availableSeats < seats) {
+            throw new Error("Seats are not available");
+        }
+
+        trip.seatNumbers = trip.seatNumbers || [];
+
         const allSeatsAvailable = seatNumbers.every(seat => trip.seatNumbers.includes(seat));
-        console.log(allSeatsAvailable); 
-        
+        // console.log('All seats available:', allSeatsAvailable);
+
         if (!allSeatsAvailable) {
             throw new Error('Some seat numbers are not available');
         }
-        
+
         trip.seatNumbers = trip.seatNumbers.filter(seat => !seatNumbers.includes(seat));
-        console.log("Trip id",tripId);
-        
+        // console.log("Updated trip seat numbers:", trip.seatNumbers);
+
         trip.availableSeats -= seats;
-        console.log(trip.availableSeats, trip.seatNumbers.length);
-        
-        const booking = await bookingModel.create(
-        {
+        // console.log("Updated available seats:", trip.availableSeats);
+
+        const booking = await bookingModel.create({
             userId,
             tripId,
-            seatsBooked : seatNumbers,
-            totalPrice : seats * trip.price,
-            paymentStatus : 'Pending',
-            bookingStatus: 'Confirmed'
+            seatsBooked: seatNumbers,
+            totalPrice: seats * trip.price,
+            paymentStatus: 'Pending',
+            bookingStatus: 'Confirmed',
         });
-        
         await trip.save();
-        user.bookings.push( booking._id );
+        user.bookings.push(booking._id);
         await user.save();
+
         return booking;
-        
-    }
+    };
+
 
     getBookings = async(userId) =>{
         const bookings = await bookingModel.find({ userId });
@@ -119,32 +130,43 @@ class UserService {
         return trip.reviews;
     }
         
-    paymentForTickets = async(userId, bookingId, paymentData) =>{ 
-        const { seatNumbers, paymentStatus, transactionId, paymentMethod, amount } = paymentData;
+    paymentForTickets = async (userId, bookingId, paymentData) => {
         const booking = await bookingModel.findById(bookingId);
-        if(!booking) throw new Error("Booking not found");
-        if(booking.userId != userId) throw new Error("You are not authorized to make payment for this booking");
+        if (!booking) throw new Error("Booking not found");
+    
+        if (!booking.userId || !userId || booking.userId.toString() !== userId.toString()) {
+            throw new Error("You are not authorized to make payment for this booking");
+        }
+    
         const trip = await tripModel.findById(booking.tripId);
-        booking.paymentStatus = paymentStatus;
-
+        if (!trip) throw new Error("Trip not found");
+    
         const payment = await paymentModel.create({
             bookingId,
             userId,
-            amount,
-            paymentMethod,
-            transactionId,
-            paymentStatus: 'Pending'
+            amount: paymentData.amount,
+            paymentMethod: paymentData.paymentMethod,
+            transactionId: paymentData.transactionId,
+            paymentStatus: paymentData.paymentStatus
         });
-        payment.paymentStatus = paymentStatus;
-        if(paymentStatus === 'Success'){
+    
+        if (paymentData.paymentStatus === 'Success') {
             booking.paymentStatus = 'Paid';
-            trip.availableSeats = trip.availableSeats.filter(seat => !seatNumbers.includes(seat));
-            trip.availableSeats -= seatNumbers.length ;
+            booking.seatNumbers = paymentData.seatNumbers;
+            await booking.save();
+    
+            trip.availableSeats = trip.availableSeats.filter(
+                seat => !paymentData.seatNumbers.includes(seat)
+            );
             await trip.save();
+    
+            payment.paymentStatus = 'Paid';
+            await payment.save();
         }
-        await booking.save();
+    
         return payment;
-    }
+    };
+    
 
 }
 
