@@ -39,12 +39,6 @@ const tripSchema = mongoose.Schema({
         required: true,
         min:0
     },
-    // availableSeats: {
-    //     type: Number,
-    //     required: true,
-    //     default:0
-    // },
-
     seatNumbers: {
         type: [Number],
         required: true,
