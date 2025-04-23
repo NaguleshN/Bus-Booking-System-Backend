@@ -10,13 +10,34 @@ if (!fs.existsSync(logDir)) {
 
 class LoggingService {
   constructor() {
-    this.appLogger = winston.createLogger({
+    // Custom timestamp formatter for local time
+    const localTimestamp = winston.format((info) => {
+      info.timestamp = new Date().toLocaleString('en-US', {
+        timeZone: 'Asia/Kolkata', // Change to your timezone
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2');
+      return info;
+    });
+
+    // Common logger configuration
+    const createLogger = (options) => winston.createLogger({
       level: "info",
       exitOnError: false,
       format: winston.format.combine(
-        winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+        localTimestamp(),
         winston.format.json()
       ),
+      ...options
+    });
+
+    // Application Logger
+    this.appLogger = createLogger({
       transports: [
         new winston.transports.Console({
           format: winston.format.combine(
@@ -34,13 +55,8 @@ class LoggingService {
       ],
     });
 
-    this.requestLogger = winston.createLogger({
-      level: "info",
-      exitOnError: false,
-      format: winston.format.combine(
-        winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-        winston.format.json()
-      ),
+    // Request Logger
+    this.requestLogger = createLogger({
       transports: [
         new winston.transports.File({
           filename: path.join(logDir, "requests.log"),
@@ -49,12 +65,14 @@ class LoggingService {
       ],
     });
 
+    // Morgan middleware remains unchanged
     this.morganLogging = morgan("combined", {
       stream: {
         write: (message) => this.requestLogger.info(message.trim()),
       },
     });
 
+    // Error handlers remain unchanged
     process.on("uncaughtException", (err) => {
       this.logError(`Uncaught Exception: ${err.message}`);
     });
@@ -63,22 +81,19 @@ class LoggingService {
       this.logError(`Unhandled Rejection: ${reason}`);
     });
 
-    console.log("Logging service initialized.");
-    this.appLogger.info("Logging service initialized successfully!");
+    this.appLogger.info("Logging service initialized");
   }
 
+  // Log methods remain unchanged
   logInfo(message) {
-    console.log("Logging Info:", message);
     this.appLogger.info(message);
   }
 
   logError(message) {
-    console.error("Logging Error:", message);
     this.appLogger.error(message);
   }
 
   logWarning(message) {
-    console.warn("Logging Warning:", message);
     this.appLogger.warn(message);
   }
 }
