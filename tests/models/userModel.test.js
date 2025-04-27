@@ -1,7 +1,10 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import userModel from '../../models/userModel.js'; 
+import userModel from '../../models/userModel.js';
 import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.test' });
 
 let mongoServer;
 
@@ -18,21 +21,22 @@ afterAll(async () => {
 describe('User Model', () => {
   it('should hash the password before saving', async () => {
     const user = new userModel({
-      name: 'Nagulesh',
-      email: 'nagulesh@example.com',
-      phone: '1234567890',
-      password: 'plainpassword'
+      name: process.env.TEST_USER_NAME,
+      email: process.env.TEST_USER_EMAIL,
+      phone: process.env.TEST_USER_PHONE,
+      password: process.env.TEST_USER_PASSWORD
     });
 
     await user.save();
-    expect(user.password).not.toBe('plainpassword');
-    const isMatch = await bcrypt.compare('plainpassword', user.password);
+    // Ensure the stored password is not the plain text one
+    expect(user.password).not.toBe(process.env.TEST_USER_PASSWORD);
+    const isMatch = await bcrypt.compare(process.env.TEST_USER_PASSWORD, user.password);
     expect(isMatch).toBe(true);
   });
 
   it('should compare passwords correctly using comparePassword method', async () => {
-    const user = await userModel.findOne({ email: 'nagulesh@example.com' });
-    const match = await user.comparePassword('plainpassword');
+    const user = await userModel.findOne({ email: process.env.TEST_USER_EMAIL });
+    const match = await user.comparePassword(process.env.TEST_USER_PASSWORD);
     const wrong = await user.comparePassword('wrongpassword');
 
     expect(match).toBe(true);
@@ -42,8 +46,8 @@ describe('User Model', () => {
   it('should not allow saving duplicate email or phone', async () => {
     const duplicate = new userModel({
       name: 'Duplicate User',
-      email: 'nagulesh@example.com',
-      phone: '1234567890',
+      email: process.env.TEST_USER_EMAIL,
+      phone: process.env.TEST_USER_PHONE,
       password: 'anotherpass'
     });
 
@@ -54,7 +58,7 @@ describe('User Model', () => {
     const user = new userModel({
       email: 'test2@example.com',
       phone: '9998887777'
-      // missing name & password
+      // Missing required fields: name & password
     });
 
     await expect(user.validate()).rejects.toThrow(/`name` is required/);
@@ -78,7 +82,7 @@ describe('User Model', () => {
       email: 'invalid@example.com',
       phone: '4445556666',
       password: 'pass123',
-      role: 'superuser' // not in enum
+      role: 'superuser' // Not in enum
     });
 
     await expect(invalidUser.validate()).rejects.toThrow(/`superuser` is not a valid enum value/);
