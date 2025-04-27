@@ -17,3 +17,4 @@ dist-ssr
 .env
 .env.*
 coverage
+./tests/models/userModel.test.js
