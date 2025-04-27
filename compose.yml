@@ -1,0 +1,87 @@
+version: "3.8"
+
+services:
+  app_dev:
+    build:
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env.dev   
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/bus-booking-system
+    depends_on:
+      - mongo
+    networks:
+      - elastic
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - elastic
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
+    container_name: elasticsearch
+    environment:
+      - node.name=es01
+      - network.host=0.0.0.0
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - elastic
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.0.0
+    container_name: kibana
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - elastic
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:9.0.0
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro  
+      - ./logs:/usr/share/filebeat/logs:ro   
+      - filebeat-data:/usr/share/filebeat/data
+    depends_on:
+      - elasticsearch
+    networks:
+      - elastic
+
+volumes:
+  mongo_data:  
+  esdata:  
+  filebeat-data:  
+
+networks:
+  elastic:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"

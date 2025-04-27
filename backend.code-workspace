@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "backend",
+			"path": "."
+		},
+		{
+			"name": ".github",
+			"path": "../../Bus-Booking-System/Bus-Booking-System-Backend/.github"
+		}
+	],
+	"settings": {}
+}
