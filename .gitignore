@@ -9,12 +9,8 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+
 .env
 .env.*
 coverage
-./tests/models/userModel.test.js
+tests/models/userModel.test.js
