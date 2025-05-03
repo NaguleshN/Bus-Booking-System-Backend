@@ -7,7 +7,16 @@ class UserController {
 
     getTrips = async (req, res) => {
         try {
-            const users = await this.userService.getTrips();
+            const { from, to, date, minPrice, maxPrice } = req.query;
+            const filters = {
+                ...(from && { from }),
+                ...(to && { to }),
+                ...(date && { date }),
+                ...(minPrice && { minPrice }),
+                ...(maxPrice && { maxPrice }),
+            };
+    
+            const users = await this.userService.getTrips(filters);
             return res.status(200).json({ 
                 success: true,
                 message: "Trips fetched successfully", 
