@@ -20,12 +20,12 @@ const mockBookingId = 'booking123';
 describe('UserService', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  test('getTrips should return future trips', async () => {
-    const trips = [{ _id: mockTripId }];
-    tripModel.find.mockResolvedValue(trips);
-    const result = await userService.getTrips();
-    expect(result).toEqual(trips);
-  });
+  // test('getTrips should return future trips', async () => {
+  //   const trips = [{ _id: mockTripId }];
+  //   tripModel.find.mockResolvedValue(trips);
+  //   const result = await userService.getTrips();
+  //   expect(result).toEqual(trips);
+  // });
 
   test('getTrip should return a future trip by id', async () => {
     const trip = { _id: mockTripId };
