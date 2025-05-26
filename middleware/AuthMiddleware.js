@@ -9,8 +9,18 @@ class AuthMiddleware {
             return res.status(404).json({ error: 'Token not found' });
         }
         console.log("Nagulesh")
+        console.log(token);
+        try{
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            console.log("Decoded :",decoded);
+        }catch(err){
+            return res.status(404).json({ error: 'Token is not valid' });
+        }
+        console.log("suuceess")
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
         const user = await userModel.findById(decoded.id).select('-password');
+        console.log(user)
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }

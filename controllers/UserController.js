@@ -7,13 +7,16 @@ class UserController {
 
     getTrips = async (req, res) => {
         try {
-            const { from, to, date, minPrice, maxPrice } = req.query;
+            const { from, to, startDateTime, endDateTime , minPrice, maxPrice, page, limit } = req.query;
             const filters = {
                 ...(from && { from }),
                 ...(to && { to }),
-                ...(date && { date }),
+                ...(startDateTime && { startDateTime }),
+                ...(endDateTime && { endDateTime }),
                 ...(minPrice && { minPrice }),
                 ...(maxPrice && { maxPrice }),
+                ...(page && { page }),
+                ...(limit && { limit }),
             };
     
             const users = await this.userService.getTrips(filters);
@@ -145,6 +148,26 @@ class UserController {
         try {
             const bookingId = req.params.id;
             const booking = await this.userService.cancelBooking(bookingId);
+            return res.status(200).json({
+                success: true,
+                message: "Booking cancelled successfully",
+                data: booking
+            });
+        } catch (err) {
+            return res.status(500).json({
+                success: false,
+                message: err.message,
+                data: null
+            });
+        }
+    }
+
+    cancelTickets = async (req, res) => {
+        try {
+            const bookingId = req.params.id;
+            const seats = req.body.seatNumbers;
+            console.log(bookingId, seats);
+            const booking = await this.userService.cancelTickets(bookingId,seats);
             return res.status(200).json({
                 success: true,
                 message: "Booking cancelled successfully",

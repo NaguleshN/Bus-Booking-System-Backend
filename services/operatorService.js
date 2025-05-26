@@ -95,7 +95,7 @@ class OperatorService {
         const { busId, source, destination, departureTime, arrivalTime, price, seatNumbers, availableSeats } = tripData ;
         const operator = await userModel.findById(operatorId);
        
-
+        const totalSeats = seatNumbers ; 
         const existBus = await busModel.findById(busId)
         if(!existBus){
             throw new Error("Bus not exists")
@@ -105,7 +105,7 @@ class OperatorService {
         }
         
         const trip = await tripModel.create({
-            operatorId, busId, source, destination, departureTime, arrivalTime, price, availableSeats, seatNumbers
+            operatorId, busId, source, destination, departureTime, arrivalTime, price, totalSeats, availableSeats, seatNumbers
         }); 
         return trip;
     }
@@ -134,8 +134,11 @@ class OperatorService {
         if (arrivalTime) updateData.arrivalTime = arrivalTime;
         if (price) updateData.price = price;
         if(seatNumbers) updateData.seatNumbers = seatNumbers;
-        if (availableSeats) updateData.availableSeats = availableSeats;
-         
+        if (availableSeats) 
+            {
+                updateData.availableSeats = seatNumbers;
+                updateData.totalSeats = availableSeats
+            }
         const trip = await tripModel.findByIdAndUpdate(
             tripId,
             {$set: updateData},

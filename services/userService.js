@@ -6,19 +6,60 @@ import feedbackModel from "../models/feedbackModel.js";
 import mongoose from 'mongoose';
 
 class UserService {
-    getTrips = async(filters) =>{
+    // getTrips = async(filters) =>{
 
-        let query = {};
+    //     let query = {};
 
-        if (filters.from) query.source = { $regex: new RegExp(filters.from, 'i') }; 
-        if (filters.to) query.destination = { $regex: new RegExp(filters.to, 'i') };
+    //     if (filters.from) query.source = { $regex: new RegExp(filters.from, 'i') }; 
+    //     if (filters.to) query.destination = { $regex: new RegExp(filters.to, 'i') };
     
-        if (filters.date) {
-            const start = new Date(filters.date);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(filters.date);
-            end.setHours(23, 59, 59, 999);
-            query.departureTime = { $gte: start, $lte: end };
+    //     if (filters.date) {
+    //         const start = new Date(filters.date);
+    //         start.setHours(0, 0, 0, 0);
+    //         const end = new Date(filters.date);
+    //         end.setHours(23, 59, 59, 999);
+    //         query.departureTime = { $gte: start, $lte: end };
+    //     }
+    
+    //     if (filters.minPrice || filters.maxPrice) {
+    //         query.price = {};
+    //         if (filters.minPrice) query.price.$gte = Number(filters.minPrice);
+    //         if (filters.maxPrice) query.price.$lte = Number(filters.maxPrice);
+    //     }
+    
+    //     const trips = await tripModel.find(query)
+    //         .populate('operatorId', 'name email') 
+    //         .populate('busId', 'name busNumber') 
+    
+    //     return trips;
+
+    //     // const trips = await tripModel.find({ arrivalTime: { $gt: new Date() } });
+    //     // return trips;
+    // }
+
+    getTrips = async (filters) => {
+        const query = {};
+    
+        if (filters.from) {
+            query.source = { $regex: new RegExp(filters.from, 'i') };
+        }
+    
+        if (filters.to) {
+            query.destination = { $regex: new RegExp(filters.to, 'i') };
+        }
+    
+        if (filters.startDateTime || filters.endDateTime) {
+            query.$and = [];
+    
+            if (filters.startDateTime) {
+                const start = new Date(filters.startDateTime);
+                query.$and.push({ departureTime: { $gte: start } });
+            }
+    
+            if (filters.endDateTime) {
+                const end = new Date(filters.endDateTime);
+                query.$and.push({ arrivalTime: { $lte: end } });
+            }
         }
     
         if (filters.minPrice || filters.maxPrice) {
@@ -27,18 +68,34 @@ class UserService {
             if (filters.maxPrice) query.price.$lte = Number(filters.maxPrice);
         }
     
-        const trips = await tripModel.find(query)
-            .populate('operatorId', 'name email') 
-            .populate('busId', 'name busNumber') 
+        const page = parseInt(filters.page) > 0 ? parseInt(filters.page) : 1;
+        const limit = parseInt(filters.limit) > 0 ? parseInt(filters.limit) : 10;
+        const skip = (page - 1) * limit;
     
-        return trips;
+        const totalCount = await tripModel.countDocuments(query);
+        const totalPages = Math.ceil(totalCount / limit);
+    
+        const trips = await tripModel.find(query)
+            .populate('operatorId', 'name email')
+            .populate('busId', 'name busNumber')
+            .skip(skip)
+            .limit(limit)
+            .sort({ departureTime: 1 });
 
-        // const trips = await tripModel.find({ arrivalTime: { $gt: new Date() } });
-        // return trips;
-    }
+        const total = await tripModel.countDocuments(query);
+    
+        return {
+            data: trips,
+            currentPage: page,
+            total,
+            totalPages,
+            totalCount,
+        };
+    };
+    
 
     getTrip = async(tripId) =>{
-        const trip = await tripModel.findOne({ _id : tripId, arrivalTime: { $gt: new Date() } });
+        const trip = await tripModel.findOne({ _id : tripId } );
         return trip;
     }
     viewProfile = async(userId) =>{
@@ -212,8 +269,9 @@ class UserService {
     }
 
     getBooking = async(bookingId) =>{
-        const booking = await bookingModel.findById(bookingId);
-        return booking;
+        const booking = await bookingModel.find({ _id : bookingId });
+        // console.log(booking);
+        return booking[0];
     }
 
     cancelBooking = async(bookingId) =>{
@@ -222,14 +280,51 @@ class UserService {
         const trip = await tripModel.findById(booking.tripId);
         if(!trip) throw new Error("Trip not found");
         if(booking.bookingStatus === 'Cancelled') throw new Error("Booking already cancelled");
-        if(booking.paymentStatus === 'Paid') throw new Error("Booking already paid");
         trip.seatNumbers = trip.seatNumbers.concat(booking.seatsBooked);
         trip.availableSeats += booking.seatsBooked.length;
+        booking.seatsCancelled = (booking.seatsCancelled || []).concat(booking.seatsBooked);
+        booking.seatsBooked = [];
+        
         await trip.save();
         booking.bookingStatus = 'Cancelled';
         await booking.save();
         return booking;
     }
+
+    cancelTickets = async (bookingId, seatsToCancel) => {
+      const booking = await bookingModel.findById(bookingId);
+      if (!booking) throw new Error("Booking not found");
+    
+      const trip = await tripModel.findById(booking.tripId);
+      if (!trip) throw new Error("Trip not found");
+    
+      if (booking.bookingStatus === 'Cancelled') {
+        throw new Error("Booking already cancelled");
+      }
+    
+      console.log("Updated seats booked:", seatsToCancel);
+      const updatedSeatsBooked = booking.seatsBooked.filter(
+        (seat) => !seatsToCancel.includes(seat)
+      );
+      console.log("Updated seats booked:", updatedSeatsBooked);
+
+      booking.seatsCancelled = (booking.seatsCancelled || []).concat(seatsToCancel);
+    
+      booking.seatsBooked = updatedSeatsBooked;
+    
+      if (booking.seatsBooked.length === 0) {
+        booking.bookingStatus = 'Cancelled';
+      }
+    
+      trip.seatNumbers = trip.seatNumbers.concat(seatsToCancel);
+      trip.availableSeats += seatsToCancel.length;
+    
+      await trip.save();
+      await booking.save();
+    
+      return booking;
+    };
+    
 
     addReview = async(userId,tripId,reviewData) =>{
         const { rating, comment } = reviewData;
