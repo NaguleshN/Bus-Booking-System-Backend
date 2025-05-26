@@ -25,7 +25,9 @@ class AuthController {
 
   login = async (req, res) => {
     try {
-      const token = await this.authService.login(req.body);
+      const data = await this.authService.login(req.body);
+      const { token, user } = data;
+      
       res.cookie('AuthToken', token, {
         httpOnly: true,
         maxAge: 3600000,
@@ -35,7 +37,7 @@ class AuthController {
       return res.status(200).json({
         success: true,
         message: "Login successful",
-        data: { token }
+        data: { token, user}
       });
     } catch (error) {
       const status = error.message.includes('Invalid') ? 401 : 400;

@@ -43,11 +43,15 @@ class AuthService {
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) throw new Error('Invalid credentials');
 
-    return jwt.sign(
+    const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
+    return { 
+      token ,
+      user
+  };
   }
 }
 

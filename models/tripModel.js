@@ -23,6 +23,10 @@ const tripSchema = mongoose.Schema({
         type: Date,
         required: true
     },
+    totalSeats: {
+        type: [Number],
+        required: true,
+    },
     departureTime: {
         type: Date,
         required: true,

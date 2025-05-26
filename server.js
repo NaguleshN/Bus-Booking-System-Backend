@@ -8,11 +8,12 @@ import userRoutes from './routes/userRoutes.js';
 import { logger, requestLogger } from './services/loggingService.js';
 import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
+import cors from 'cors';
 
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 100 
+  max: 10000 
 });
 
 const speedLimiter = slowDown({
@@ -23,11 +24,18 @@ const speedLimiter = slowDown({
 
 const app = express();
 app.use(limiter);
-app.use(speedLimiter);
+// app.use(speedLimiter);
 
 connectDB();
 app.use(cookieParser());
 app.use(express.json())
+app.use(
+cors({
+  origin: 'http://localhost:3000',  
+  credentials: true, 
+})
+
+);
 
 app.use(requestLogger)
 

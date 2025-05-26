@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  app_dev:
+  app:
     build:
       context: .
       dockerfile: dockerfile
@@ -21,11 +21,27 @@ services:
 
   mongo:
     image: mongo:latest
+    command: mongod --replSet rs0 --bind_ip_all
     container_name: mongo_db
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    networks:
+      - elastic
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs/cert.pem:/etc/certs/cert.pem:ro
+      - ./certs/key.pem:/etc/certs/key.pem:ro
+    depends_on:
+      - app
     networks:
       - elastic
 
